@@ -39,17 +39,30 @@ sudo apt upgrade -y
 
 # Install dependencies
 echo "📦 Installing dependencies..."
+sudo apt update
 sudo apt install -y \
-    python3.11 \
-    python3.11-venv \
+    python3 \
+    python3-venv \
     python3-pip \
-    python3.11-dev \
+    python3-dev \
     python3-cups \
     cups \
     libcups2-dev \
     git \
     curl \
     build-essential
+
+# Try to install Python 3.11 if available (has pre-compiled wheels)
+echo "🐍 Checking for Python 3.11..."
+if sudo apt install -y python3.11 python3.11-venv python3.11-dev 2>/dev/null; then
+    PYTHON_CMD="python3.11"
+    echo "✅ Using Python 3.11 (pre-compiled wheels available)"
+else
+    PYTHON_CMD="python3"
+    PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '\d+\.\d+' | head -1)
+    echo "⚠️  Python 3.11 not available, using Python $PYTHON_VERSION"
+    echo "⚠️  Note: Package compilation may take 20-30 minutes on Pi Zero 2 W"
+fi
 
 # Install Node.js
 echo "📦 Installing Node.js..."
@@ -105,7 +118,7 @@ sudo chown -R cloudprintd:cloudprintd /opt/cloudprintd
 # Create Python virtual environment
 echo "🐍 Setting up Python environment..."
 cd /opt/cloudprintd
-sudo -u cloudprintd python3.11 -m venv --system-site-packages venv
+sudo -u cloudprintd $PYTHON_CMD -m venv --system-site-packages venv
 sudo -u cloudprintd ./venv/bin/pip install --upgrade pip
 # Use disk-based temp directory for large package compilations
 sudo -u cloudprintd TMPDIR=/var/tmp ./venv/bin/pip install -r requirements.txt
