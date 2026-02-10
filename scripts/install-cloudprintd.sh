@@ -53,10 +53,18 @@ sudo apt install -y \
 # Install Node.js
 echo "📦 Installing Node.js..."
 if ! command -v node &> /dev/null; then
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    # Use Node.js 20 LTS (supported until April 2026)
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt install -y nodejs
 else
-    echo "Node.js already installed: $(node --version)"
+    NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$NODE_VERSION" -lt 18 ]; then
+        echo "⚠️  Node.js version too old ($(node --version)), upgrading to v20 LTS..."
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+        sudo apt install -y nodejs
+    else
+        echo "Node.js already installed: $(node --version)"
+    fi
 fi
 
 # Create cloudprintd user

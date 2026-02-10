@@ -48,7 +48,7 @@ Download and flash **Raspberry Pi OS Lite (64-bit)** to your microSD card:
 - CloudPrintd is tested on both but optimized for 64-bit
 
 **Your Configuration:**
-- **Hostname:** `cloudprind` ✓ (you configured this)
+- **Hostname:** `cloudprintd` ✓ (you configured this)
 - **Username:** `admin` ✓ (you configured this)
 - **Enable SSH:** Yes
 - **Configure WiFi:** Your network credentials
@@ -79,7 +79,7 @@ Download and flash **Raspberry Pi OS Lite (64-bit)** to your microSD card:
    - LED stops rapid flashing (becomes slow/occasional blinks)
    - Wait **2 minutes total** from power-on to be safe
    - Then check if WiFi network is available (if using WiFi AP mode)
-   - Or ping the hostname: `ping cloudprind.local`
+   - Or ping the hostname: `ping cloudprintd.local`
 
 **WiFi AP Mode (for commercial CloudPrintd products):**
 - **Only activates if NO WiFi is configured in the OS image**
@@ -92,8 +92,8 @@ Download and flash **Raspberry Pi OS Lite (64-bit)** to your microSD card:
 - **If you configured WiFi in Raspberry Pi Imager, this is what happens:**
 - Pi connects to your WiFi automatically
 - **No AP mode network** - CloudPrintd-SETUP-XXXX won't appear
-- Find it on your network: `ping cloudprind.local`
-- Access via: `http://cloudprind.local:8000`
+- Find it on your network: `ping cloudprintd.local`
+- Access via: `http://cloudprintd.local:8000`
 - The WiFi configuration UI is still available in Dashboard → Network tab
 
 **Troubleshooting first boot:**
@@ -136,7 +136,7 @@ OS: Raspberry Pi OS Lite (64-bit) ← IMPORTANT
 Storage: Your SD card
 
 Click ⚙️ (Settings gear):
-✓ Set hostname: cloudprind
+✓ Set hostname: cloudprintd
 ✓ Enable SSH (use password authentication)
 ✓ Username: admin
 ✓ Password: [your choice]
@@ -265,11 +265,11 @@ Step 1: Flash STOCK Raspberry Pi OS
         ↓
 Step 2: Boot Pi and verify it works
         ↓
-        ping cloudprind.local (should get replies)
+        ping cloudprintd.local (should get replies)
         ↓
 Step 3: SSH into Pi
         ↓
-        ssh admin@cloudprind.local
+        ssh admin@cloudprintd.local
         ↓
 Step 4: Install CloudPrintd (choose one method below)
         ↓
@@ -278,7 +278,7 @@ Step 4: Install CloudPrintd (choose one method below)
         ↓
 Step 5: Access Dashboard
         ↓
-        http://cloudprind.local:8000
+        http://cloudprintd.local:8000
 ```
 
 ---
@@ -289,7 +289,7 @@ Step 5: Access Dashboard
 
 ```bash
 # SSH into your Pi first
-ssh admin@cloudprind.local
+ssh admin@cloudprintd.local
 
 # Run automated installer
 curl -sSL https://raw.githubusercontent.com/v29tnr/CloudPrintd/main/scripts/install-cloudprintd.sh | bash
@@ -314,7 +314,7 @@ chmod +x install-cloudprintd.sh
 **After installation completes:**
 ```bash
 # Access dashboard:
-http://cloudprind.local:8000
+http://cloudprintd.local:8000
 
 # Check service status:
 sudo systemctl status cloudprintd
@@ -335,7 +335,7 @@ Insert the SD card and boot the Pi. Find its IP address:
 
 ```bash
 # From another computer on the same network
-ping cloudprind.local
+ping cloudprintd.local
 
 # Or check your router's DHCP leases
 ```
@@ -343,7 +343,7 @@ ping cloudprind.local
 SSH into your Pi:
 
 ```bash
-ssh admin@cloudprind.local
+ssh admin@cloudprintd.local
 # Or: ssh admin@192.168.1.XXX
 ```
 
@@ -371,8 +371,13 @@ sudo apt install -y \
 **For Node.js (frontend build):**
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+# Install Node.js 20 LTS (supported until April 2026)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
+
+# Verify installation
+node --version  # Should show v20.x.x
+npm --version
 ```
 
 ### 4. Create CloudPrintd User
@@ -507,7 +512,7 @@ sudo chmod +x /usr/local/bin/cloudflared
 cloudflared tunnel login
 
 # Create tunnel
-cloudflared tunnel create cloudprind
+cloudflared tunnel create cloudprintd
 
 # Configure tunnel
 nano ~/.cloudflared/config.yml
@@ -519,15 +524,15 @@ tunnel: YOUR_TUNNEL_ID
 credentials-file: /home/admin/.cloudflared/YOUR_TUNNEL_ID.json
 
 ingress:
-  - hostname: cloudprind.yourdomain.com
+  - hostname: cloudprintd.yourdomain.com
     service: http://localhost:8000
   - service: http_status:404
 ```
 
 **Run tunnel:**
 ```bash
-cloudflared tunnel route dns YOUR_TUNNEL_ID cloudprind.yourdomain.com
-cloudflared tunnel run cloudprind
+cloudflared tunnel route dns YOUR_TUNNEL_ID cloudprintd.yourdomain.com
+cloudflared tunnel run cloudprintd
 ```
 
 **Make it a service:**
@@ -563,7 +568,7 @@ If Salesforce resources are on the same network:
 SSH into your working CloudPrintd Pi:
 
 ```bash
-ssh admin@cloudprind.local
+ssh admin@cloudprintd.local
 ```
 
 ### Step 2: Test Everything
@@ -880,7 +885,7 @@ Expected response:
 
 Open your browser:
 ```
-http://cloudprind.local:8000/setup
+http://cloudprintd.local:8000/setup
 # Or: http://192.168.1.XXX:8000/setup
 ```
 
@@ -1080,7 +1085,7 @@ sudo systemctl restart dhcpcd
 - **Documentation:** See `/opt/cloudprintd/packages/current/docs/`
 - **Logs:** `/home/cloudprintd/logs/`
 - **Service Status:** `sudo systemctl status cloudprintd`
-- **Web Dashboard:** `http://cloudprind.local:8000/` (your hostname)
+- **Web Dashboard:** `http://cloudprintd.local:8000/` (your hostname)
 
 ---
 
