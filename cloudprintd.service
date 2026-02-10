@@ -1,0 +1,44 @@
+[Unit]
+Description=CloudPrintd Print Server
+Documentation=https://github.com/yourorg/CloudPrintd
+After=network.target cups.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=CloudPrintd
+Group=CloudPrintd
+WorkingDirectory=/opt/CloudPrintd/packages/current/app
+Environment="PATH=/opt/CloudPrintd/packages/current/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/CloudPrintd/packages/current/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config /opt/CloudPrintd/config/logging.json
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=always
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/CloudPrintd/config /opt/CloudPrintd/downloads /home/CloudPrintd/logs /home/CloudPrintd/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=512M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

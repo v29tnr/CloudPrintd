@@ -1,0 +1,19 @@
+{
+  "versions": [
+    {
+      "version": "1.0.0",
+      "channel": "stable",
+      "release_date": "2026-02-10T15:30:00Z",
+      "size_bytes": 15728640,
+      "checksum": "abc123def456...",
+      "download_url": "/downloads/CloudPrintd-v1.0.0.pbpkg",
+      "changelog_url": "/changelogs/1.0.0.md",
+      "min_system_version": "1.0.0",
+      "requires_migration": false
+    }
+  ],
+  "metadata": {
+    "server_version": "1.0.0",
+    "last_updated": "2026-02-10T15:30:00Z"
+  }
+}

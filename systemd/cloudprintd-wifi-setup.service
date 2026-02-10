@@ -1,0 +1,21 @@
+[Unit]
+Description=CloudPrintd WiFi Setup Service
+Documentation=https://github.com/yourusername/cloudprintd
+After=network-pre.target
+Before=network.target
+DefaultDependencies=no
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cloudprintd/scripts/wifi-setup-check.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+# Security
+NoNewPrivileges=false
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

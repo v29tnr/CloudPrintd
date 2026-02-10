@@ -1,0 +1,7 @@
+{
+  "auto_update": false,
+  "channel": "stable",
+  "check_interval_hours": 24,
+  "keep_previous_versions": 2,
+  "update_server": "https://updates.CloudPrintd.local"
+}

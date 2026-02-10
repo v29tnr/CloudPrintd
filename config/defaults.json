@@ -1,0 +1,24 @@
+{
+  "api_version": "1.0.0",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "log_level": "info"
+  },
+  "security": {
+    "api_tokens": [],
+    "ip_whitelist_enabled": false,
+    "ip_whitelist": []
+  },
+  "connectivity": {
+    "method": "none",
+    "tunnel_token": "",
+    "tailscale_key": "",
+    "ddns_config": {},
+    "domain": ""
+  },
+  "system": {
+    "setup_completed": false,
+    "instance_id": ""
+  }
+}
