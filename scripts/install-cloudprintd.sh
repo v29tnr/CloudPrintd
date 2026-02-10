@@ -107,7 +107,8 @@ echo "🐍 Setting up Python environment..."
 cd /opt/cloudprintd
 sudo -u cloudprintd python3 -m venv --system-site-packages venv
 sudo -u cloudprintd ./venv/bin/pip install --upgrade pip
-sudo -u cloudprintd ./venv/bin/pip install -r requirements.txt
+# Use disk-based temp directory for large package compilations
+sudo -u cloudprintd TMPDIR=/var/tmp ./venv/bin/pip install -r requirements.txt
 
 # Build frontend
 echo "⚛️  Building frontend..."
