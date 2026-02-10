@@ -292,10 +292,10 @@ Step 5: Access Dashboard
 ssh admin@cloudprind.local
 
 # Run automated installer
-curl -sSL https://raw.githubusercontent.com/yourusername/cloudprintd/main/scripts/install-cloudprintd.sh | bash
+curl -sSL https://raw.githubusercontent.com/v29tnr/CloudPrintd/main/scripts/install-cloudprintd.sh | bash
 
 # OR download and run:
-wget https://raw.githubusercontent.com/yourusername/cloudprintd/main/scripts/install-cloudprintd.sh
+wget https://raw.githubusercontent.com/v29tnr/CloudPrintd/main/scripts/install-cloudprintd.sh
 chmod +x install-cloudprintd.sh
 ./install-cloudprintd.sh
 ```
@@ -551,6 +551,254 @@ Access via Tailscale IP (found in admin console).
 If Salesforce resources are on the same network:
 - Use local IP: `http://192.168.1.XXX:8000`
 - Configure firewall to allow port 8000
+
+---
+
+## Creating Master Image for Commercial Products
+
+**Once you have CloudPrintd working perfectly on ONE Pi, create a master image to duplicate to other SD cards.**
+
+### Step 1: Prepare Master Pi
+
+SSH into your working CloudPrintd Pi:
+
+```bash
+ssh admin@cloudprind.local
+```
+
+### Step 2: Test Everything
+
+```bash
+# Verify CloudPrintd is running
+sudo systemctl status cloudprintd
+
+# Test dashboard access
+curl http://localhost:8000/api/v1/health
+
+# Test a printer (if configured)
+```
+
+### Step 3: Clear WiFi Configuration
+
+**For commercial products, customers need to configure THEIR WiFi:**
+
+```bash
+# Stop CloudPrintd
+sudo systemctl stop cloudprintd
+
+# Clear WiFi credentials (enables AP mode for customers)
+sudo bash -c 'cat > /etc/wpa_supplicant/wpa_supplicant.conf' << 'EOF'
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=US
+EOF
+
+# Clear network history
+sudo rm -f /etc/NetworkManager/system-connections/*
+
+# Verify WiFi AP setup service is enabled
+sudo systemctl enable cloudprintd-wifi-setup.service
+```
+
+### Step 4: Clean Up Logs and History
+
+```bash
+# Clear bash history
+history -c
+rm -f ~/.bash_history
+sudo rm -f /home/cloudprintd/.bash_history
+sudo rm -f /root/.bash_history
+
+# Clear logs
+sudo journalctl --vacuum-time=1s
+sudo rm -f /var/log/*.log
+sudo rm -f /var/log/cloudprintd/*.log
+
+# Remove SSH host keys (will regenerate on first customer boot)
+sudo rm -f /etc/ssh/ssh_host_*
+
+# Regenerate SSH keys script (runs on first boot)
+sudo bash -c 'cat > /etc/rc.local' << 'EOF'
+#!/bin/bash
+test -f /etc/ssh/ssh_host_dsa_key || dpkg-reconfigure openssh-server
+exit 0
+EOF
+sudo chmod +x /etc/rc.local
+```
+
+### Step 5: Set Unique Per-Unit Values
+
+**Create script to run on first customer boot:**
+
+```bash
+sudo nano /usr/local/bin/first-boot-setup.sh
+```
+
+```bash
+#!/bin/bash
+# First boot customization - runs once per unit
+
+FIRST_BOOT_FLAG="/opt/cloudprintd/.first_boot_done"
+
+if [ -f "$FIRST_BOOT_FLAG" ]; then
+    exit 0  # Already ran
+fi
+
+# Generate unique API token
+TOKEN=$(openssl rand -hex 32)
+echo "INITIAL_TOKEN=cp-${TOKEN}" | sudo tee /opt/cloudprintd/.env
+sudo chmod 600 /opt/cloudprintd/.env
+sudo chown cloudprintd:cloudprintd /opt/cloudprintd/.env
+
+# Print token to serial console (for manufacturing)
+echo "========================================" > /dev/console
+echo "CloudPrintd Initial API Token:" > /dev/console
+echo "cp-${TOKEN}" > /dev/console
+echo "========================================" > /dev/console
+
+# Log to file
+echo "cp-${TOKEN}" | sudo tee /opt/cloudprintd/.initial_token.txt
+
+# Mark as complete
+sudo touch "$FIRST_BOOT_FLAG"
+
+# Restart CloudPrintd with new token
+sudo systemctl restart cloudprintd
+
+exit 0
+```
+
+```bash
+# Make executable
+sudo chmod +x /usr/local/bin/first-boot-setup.sh
+
+# Add to systemd
+sudo bash -c 'cat > /etc/systemd/system/first-boot-setup.service' << 'EOF'
+[Unit]
+Description=CloudPrintd First Boot Setup
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/first-boot-setup.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl enable first-boot-setup.service
+```
+
+### Step 6: Final Shutdown
+
+```bash
+# Final system shutdown (for imaging)
+sudo shutdown -h now
+```
+
+### Step 7: Create Image from SD Card
+
+**On Windows:**
+
+1. **Remove SD card from Pi**
+2. **Insert into PC**
+3. **Use Win32 Disk Imager:**
+   - Download: https://sourceforge.net/projects/win32diskimager/
+   - Click "Read"
+   - Save as: `cloudprintd-master-v1.0.0.img`
+   - Wait for completion (5-10 minutes for 32GB card)
+
+4. **Compress image:**
+   ```powershell
+   # PowerShell
+   Compress-Archive -Path "cloudprintd-master-v1.0.0.img" -DestinationPath "cloudprintd-master-v1.0.0.zip"
+   
+   # OR use 7-Zip for better compression:
+   # Right-click → 7-Zip → Add to archive... → Choose .xz format
+   ```
+
+**On Mac/Linux:**
+
+```bash
+# Insert SD card and find device
+diskutil list  # Mac
+lsblk          # Linux
+
+# Create image (replace /dev/diskX with your SD card)
+sudo dd if=/dev/diskX of=cloudprintd-master-v1.0.0.img bs=4M status=progress
+
+# Compress
+xz -9 cloudprintd-master-v1.0.0.img
+# Creates: cloudprintd-master-v1.0.0.img.xz
+```
+
+### Step 8: Duplicate to Production Cards
+
+**Write master image to new SD cards:**
+
+```powershell
+# Windows - Win32 Disk Imager
+# 1. Decompress .zip/.xz file
+# 2. Open Win32 Disk Imager
+# 3. Select cloudprintd-master-v1.0.0.img
+# 4. Select drive letter (SD card)
+# 5. Click "Write"
+# 6. Repeat for each card
+```
+
+**For mass production (100+ units):**
+- Use SD card duplicator hardware (10-port, ~$300)
+- Or send master image to contract manufacturer
+
+### Step 9: First Customer Boot
+
+**What happens when customer powers on:**
+
+```
+0:00 - Pi boots from cloned SD card
+0:30 - first-boot-setup.sh runs
+       Generates unique API token
+       Saves to /opt/cloudprintd/.initial_token.txt
+0:45 - wifi-setup-check.sh runs
+       Detects no WiFi configured
+       Starts AP mode
+1:30 - WiFi network appears: "CloudPrintd-SETUP-A1B2"
+       Customer connects with password: cloudprintd
+2:00 - Customer configures WiFi through captive portal
+       Pi reboots
+3:00 - Pi connects to customer's WiFi
+       CloudPrintd accessible at: http://cloudprintd.local:8000
+```
+
+### Quality Control Checklist
+
+Before imaging, verify:
+
+- [ ] CloudPrintd service starts automatically
+- [ ] Dashboard loads at http://localhost:8000
+- [ ] WiFi configuration is cleared
+- [ ] first-boot-setup.service is enabled
+- [ ] cloudprintd-wifi-setup.service is enabled
+- [ ] No personal data (WiFi passwords, API tokens)
+- [ ] Logs are cleared
+- [ ] SSH host keys are cleared
+- [ ] Image size is reasonable (<4GB for 32GB card)
+
+### Updating Master Image
+
+When you release a new version:
+
+1. Boot a Pi with current master image
+2. SSH in and update CloudPrintd:
+   ```bash
+   cd /opt/cloudprintd
+   git pull
+   sudo systemctl restart cloudprintd
+   ```
+3. Test new version
+4. Repeat Steps 3-8 above to create new master image
+5. Version the filename: `cloudprintd-master-v1.1.0.img`
 
 ---
 

@@ -3,8 +3,8 @@
 # CloudPrintd Automated Installation Script
 # Run this on a fresh Raspberry Pi OS installation
 #
-# Usage: curl -sSL https://install.cloudprintd.com | bash
-# Or: wget -qO- https://install.cloudprintd.com | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/v29tnr/CloudPrintd/main/scripts/install-cloudprintd.sh | bash
+# Or: wget -qO- https://raw.githubusercontent.com/v29tnr/CloudPrintd/main/scripts/install-cloudprintd.sh | bash
 #
 
 set -e
@@ -78,10 +78,17 @@ cd /opt
 
 # Download latest release
 echo "Downloading latest CloudPrintd release..."
-LATEST_URL=$(curl -s https://api.github.com/repos/yourusername/cloudprintd/releases/latest | grep "tarball_url" | cut -d '"' -f 4)
-sudo wget -O cloudprintd.tar.gz "$LATEST_URL"
-sudo tar -xzf cloudprintd.tar.gz -C /opt/cloudprintd --strip-components=1
-sudo rm cloudprintd.tar.gz
+# Try GitHub release first
+LATEST_URL=$(curl -s https://api.github.com/repos/v29tnr/CloudPrintd/releases/latest | grep "tarball_url" | cut -d '"' -f 4)
+if [ -n "$LATEST_URL" ]; then
+    sudo wget -O cloudprintd.tar.gz "$LATEST_URL"
+    sudo tar -xzf cloudprintd.tar.gz -C /opt/cloudprintd --strip-components=1
+    sudo rm cloudprintd.tar.gz
+else
+    # Fallback to git clone if no releases
+    echo "No releases found, cloning from main branch..."
+    sudo git clone https://github.com/v29tnr/CloudPrintd.git /opt/cloudprintd
+fi
 
 # Set ownership
 sudo chown -R cloudprintd:cloudprintd /opt/cloudprintd
