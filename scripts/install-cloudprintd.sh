@@ -40,10 +40,10 @@ sudo apt upgrade -y
 # Install dependencies
 echo "📦 Installing dependencies..."
 sudo apt install -y \
-    python3 \
-    python3-venv \
+    python3.11 \
+    python3.11-venv \
     python3-pip \
-    python3-dev \
+    python3.11-dev \
     python3-cups \
     cups \
     libcups2-dev \
@@ -105,7 +105,7 @@ sudo chown -R cloudprintd:cloudprintd /opt/cloudprintd
 # Create Python virtual environment
 echo "🐍 Setting up Python environment..."
 cd /opt/cloudprintd
-sudo -u cloudprintd python3 -m venv --system-site-packages venv
+sudo -u cloudprintd python3.11 -m venv --system-site-packages venv
 sudo -u cloudprintd ./venv/bin/pip install --upgrade pip
 # Use disk-based temp directory for large package compilations
 sudo -u cloudprintd TMPDIR=/var/tmp ./venv/bin/pip install -r requirements.txt
