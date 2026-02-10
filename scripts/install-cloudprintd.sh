@@ -44,6 +44,7 @@ sudo apt install -y \
     python3-venv \
     python3-pip \
     python3-dev \
+    python3-cups \
     cups \
     libcups2-dev \
     git \
@@ -104,7 +105,7 @@ sudo chown -R cloudprintd:cloudprintd /opt/cloudprintd
 # Create Python virtual environment
 echo "🐍 Setting up Python environment..."
 cd /opt/cloudprintd
-sudo -u cloudprintd python3 -m venv venv
+sudo -u cloudprintd python3 -m venv --system-site-packages venv
 sudo -u cloudprintd ./venv/bin/pip install --upgrade pip
 sudo -u cloudprintd ./venv/bin/pip install -r requirements.txt
 
