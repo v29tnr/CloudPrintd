@@ -250,6 +250,85 @@ display_auto_detect=1
 
 ---
 
+## CloudPrintd Installation
+
+**⚠️ IMPORTANT: You must have a BOOTING Pi before installing CloudPrintd!**
+
+If your Pi won't boot (6-blinks), fix that first using the troubleshooting guide above.
+
+### Installation Flow
+
+```
+Step 1: Flash STOCK Raspberry Pi OS
+        ↓
+        Configure WiFi, SSH, username in Raspberry Pi Imager
+        ↓
+Step 2: Boot Pi and verify it works
+        ↓
+        ping cloudprind.local (should get replies)
+        ↓
+Step 3: SSH into Pi
+        ↓
+        ssh admin@cloudprind.local
+        ↓
+Step 4: Install CloudPrintd (choose one method below)
+        ↓
+        Method A: Automated installer (recommended)
+        Method B: Manual installation (detailed control)
+        ↓
+Step 5: Access Dashboard
+        ↓
+        http://cloudprind.local:8000
+```
+
+---
+
+### Method A: Automated Installation (Recommended)
+
+**One command, installs everything automatically:**
+
+```bash
+# SSH into your Pi first
+ssh admin@cloudprind.local
+
+# Run automated installer
+curl -sSL https://raw.githubusercontent.com/yourusername/cloudprintd/main/scripts/install-cloudprintd.sh | bash
+
+# OR download and run:
+wget https://raw.githubusercontent.com/yourusername/cloudprintd/main/scripts/install-cloudprintd.sh
+chmod +x install-cloudprintd.sh
+./install-cloudprintd.sh
+```
+
+**What it does:**
+- ✅ Updates system packages
+- ✅ Installs all dependencies (Python, Node.js, CUPS)
+- ✅ Creates cloudprintd service user
+- ✅ Downloads latest CloudPrintd release
+- ✅ Builds frontend
+- ✅ Installs systemd service
+- ✅ Generates API token
+- ✅ Starts CloudPrintd
+- ✅ Optional: Installs WiFi AP mode (for commercial products)
+
+**After installation completes:**
+```bash
+# Access dashboard:
+http://cloudprind.local:8000
+
+# Check service status:
+sudo systemctl status cloudprintd
+
+# View logs:
+sudo journalctl -u cloudprintd -f
+```
+
+---
+
+### Method B: Manual Installation (Step-by-Step)
+
+**For full control over the installation process:**
+
 **Now continue with manual setup:**
 
 Insert the SD card and boot the Pi. Find its IP address:
