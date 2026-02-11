@@ -7,6 +7,7 @@ import os
 import secrets
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional
 from contextlib import asynccontextmanager
 
@@ -891,6 +892,14 @@ async def get_service_logs(
             detail=f"Error retrieving logs: {str(e)}"
         )
 
+
+# Mount static files for web UI
+webui_path = Path(__file__).parent.parent / "webui" / "dist"
+if webui_path.exists():
+    app.mount("/", StaticFiles(directory=str(webui_path), html=True), name="webui")
+    logger.info(f"Mounted web UI from {webui_path}")
+else:
+    logger.warning(f"Web UI not found at {webui_path}")
 
 
 if __name__ == "__main__":
