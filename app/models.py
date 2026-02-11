@@ -97,6 +97,11 @@ class AddPrinterRequest(BaseModel):
     config: PrinterConfig = Field(..., description="Printer configuration")
 
 
+class UpdatePrinterRequest(BaseModel):
+    """Request to update an existing printer."""
+    config: PrinterConfig = Field(..., description="Updated printer configuration")
+
+
 class VersionInfo(BaseModel):
     """Version information model."""
     version: str = Field(..., description="Version number")

@@ -1,0 +1,12 @@
+{
+  "printers": {
+    "warehouse_test": {
+      "type": "zebra_raw",
+      "display_name": "Warehouse Test",
+      "location": "",
+      "ip": "192.168.0.35",
+      "port": 9100,
+      "cups_name": null
+    }
+  }
+}

@@ -27,6 +27,7 @@ export const setupAPI = {
 export const printersAPI = {
   list: () => api.get('/printers'),
   add: (printerId, config) => api.post('/printers', { id: printerId, config }),
+  update: (printerId, config) => api.put(`/printers/${printerId}`, { config }),
   remove: (printerId) => api.delete(`/printers/${printerId}`),
   discover: (ipRange = '192.168.1.0/24') => api.post('/discover', null, { params: { ip_range: ipRange } }),
 };
@@ -34,6 +35,12 @@ export const printersAPI = {
 export const printAPI = {
   submit: (printJob) => api.post('/print', printJob),
   stats: () => api.get('/stats'),
+  test: (printerId, content, format = 'zpl') => api.post('/print', {
+    printer: printerId,
+    content: content,
+    format: format,
+    copies: 1
+  }),
 };
 
 export const systemAPI = {

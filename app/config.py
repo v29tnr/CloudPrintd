@@ -131,6 +131,18 @@ class ConfigManager:
         printers["printers"][printer_id] = printer_config
         self._save_json(self.printers_file, printers)
     
+    def update_printer(self, printer_id: str, printer_config: Dict[str, Any]) -> None:
+        """
+        Update an existing printer configuration.
+        
+        Args:
+            printer_id: Unique printer identifier
+            printer_config: Updated printer configuration dictionary
+        """
+        printers = self.get_printers()
+        printers["printers"][printer_id] = printer_config
+        self._save_json(self.printers_file, printers)
+    
     def remove_printer(self, printer_id: str) -> bool:
         """
         Remove a printer configuration.

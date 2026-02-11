@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from app.models import (
     PrintRequest, PrintResponse, PrinterInfo, PrinterConfig, PrinterStatus,
     DiscoveredPrinter, HealthResponse, StatsResponse, AddPrinterRequest,
-    PrintFormat, PrinterType, VersionInfo, UpdateConfig
+    UpdatePrinterRequest, PrintFormat, PrinterType, VersionInfo, UpdateConfig
 )
 from app.config import ConfigManager
 from app.security import SecurityManager, verify_token, verify_ip_whitelist
@@ -323,6 +323,49 @@ async def add_printer(
     return {
         "success": True,
         "message": f"Printer '{printer_id}' added successfully",
+        "printer_id": printer_id
+    }
+
+
+@app.put("/api/v1/printers/{printer_id}", tags=["Printers"])
+async def update_printer(
+    printer_id: str,
+    printer_request: UpdatePrinterRequest,
+    token: str = Depends(require_auth)
+):
+    """Update an existing printer configuration."""
+    # Check if printer exists
+    printers = config_manager.get_printers()
+    if printer_id not in printers.get("printers", {}):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Printer '{printer_id}' not found"
+        )
+    
+    printer_config = printer_request.config.dict()
+    
+    # Validate configuration based on type
+    if printer_config["type"] == PrinterType.ZEBRA_RAW:
+        if not printer_config.get("ip"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Zebra printer requires IP address"
+            )
+    elif printer_config["type"] == PrinterType.CUPS:
+        if not printer_config.get("cups_name"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="CUPS printer requires cups_name"
+            )
+    
+    # Update printer configuration
+    config_manager.update_printer(printer_id, printer_config)
+    
+    logger.info(f"Updated printer '{printer_id}' of type '{printer_config['type']}'")
+    
+    return {
+        "success": True,
+        "message": f"Printer '{printer_id}' updated successfully",
         "printer_id": printer_id
     }
 

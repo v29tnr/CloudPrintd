@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { printersAPI } from '../api';
+import { printersAPI, printAPI } from '../api';
 
 function PrinterDiscovery({ printers, onChange }) {
   const [discovering, setDiscovering] = useState(false);
@@ -7,7 +7,20 @@ function PrinterDiscovery({ printers, onChange }) {
   const [error, setError] = useState(null);
   const [ipRange, setIpRange] = useState('192.168.1.0/24');
   const [showManualAdd, setShowManualAdd] = useState(false);
+  const [editingPrinter, setEditingPrinter] = useState(null);
+  const [testPrintDialog, setTestPrintDialog] = useState(null);
+  const [testPrintContent, setTestPrintContent] = useState('^XA^FO50,50^A0N,50,50^FDTest Label^FS^XZ');
+  const [testPrintFormat, setTestPrintFormat] = useState('zpl');
+  const [testing, setTesting] = useState(false);
   const [manualPrinter, setManualPrinter] = useState({
+    id: '',
+    type: 'zebra_raw',
+    display_name: '',
+    ip: '',
+    port: 9100,
+    location: '',
+  });
+  const [editPrinter, setEditPrinter] = useState({
     id: '',
     type: 'zebra_raw',
     display_name: '',
@@ -109,6 +122,72 @@ function PrinterDiscovery({ printers, onChange }) {
     }
   };
 
+  const startEditPrinter = (printer) => {
+    setEditingPrinter(printer.id);
+    setEditPrinter({
+      id: printer.id,
+      type: printer.config.type,
+      display_name: printer.config.display_name,
+      ip: printer.config.ip || '',
+      port: printer.config.port || 9100,
+      location: printer.config.location || '',
+    });
+    setShowManualAdd(false);
+  };
+
+  const updatePrinterConfig = async () => {
+    if (!editPrinter.display_name) {
+      setError('Please fill in printer name');
+      return;
+    }
+
+    if (editPrinter.type === 'zebra_raw' && !editPrinter.ip) {
+      setError('IP address is required for raw TCP printers');
+      return;
+    }
+
+    try {
+      await printersAPI.update(editingPrinter, {
+        type: editPrinter.type,
+        display_name: editPrinter.display_name,
+        ip: editPrinter.ip,
+        port: editPrinter.port,
+        location: editPrinter.location,
+      });
+      
+      await loadPrinters();
+      setEditingPrinter(null);
+      setEditPrinter({
+        id: '',
+        type: 'zebra_raw',
+        display_name: '',
+        ip: '',
+        port: 9100,
+        location: '',
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update printer');
+    }
+  };
+
+  const testPrint = async () => {
+    if (!testPrintDialog) return;
+    
+    setTesting(true);
+    setError(null);
+    
+    try {
+      await printAPI.test(testPrintDialog.id, testPrintContent, testPrintFormat);
+      alert('Test print sent successfully!');
+      setTestPrintDialog(null);
+      setTestPrintContent('^XA^FO50,50^A0N,50,50^FDTest Label^FS^XZ');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Test print failed');
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div>
       <h2>Printer Discovery</h2>
@@ -172,7 +251,10 @@ function PrinterDiscovery({ printers, onChange }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3>Configured Printers ({printers.length})</h3>
           <button
-            onClick={() => setShowManualAdd(!showManualAdd)}
+            onClick={() => {
+              setShowManualAdd(!showManualAdd);
+              setEditingPrinter(null);
+            }}
             className="secondary"
           >
             {showManualAdd ? 'Cancel' : 'Add Manually'}
@@ -232,6 +314,55 @@ function PrinterDiscovery({ printers, onChange }) {
           </div>
         )}
 
+        {editingPrinter && (
+          <div className="card" style={{ marginTop: '1rem' }}>
+            <h4>Edit Printer - {editingPrinter}</h4>
+            <div className="form-group">
+              <label>Display Name</label>
+              <input
+                type="text"
+                value={editPrinter.display_name}
+                onChange={(e) => setEditPrinter({ ...editPrinter, display_name: e.target.value })}
+                placeholder="Warehouse Zebra Printer"
+              />
+            </div>
+            <div className="form-group">
+              <label>IP Address</label>
+              <input
+                type="text"
+                value={editPrinter.ip}
+                onChange={(e) => setEditPrinter({ ...editPrinter, ip: e.target.value })}
+                placeholder="192.168.1.100"
+              />
+            </div>
+            <div className="form-group">
+              <label>Port</label>
+              <input
+                type="number"
+                value={editPrinter.port}
+                onChange={(e) => setEditPrinter({ ...editPrinter, port: parseInt(e.target.value) })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Location (optional)</label>
+              <input
+                type="text"
+                value={editPrinter.location}
+                onChange={(e) => setEditPrinter({ ...editPrinter, location: e.target.value })}
+                placeholder="Warehouse Bay 3"
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button onClick={updatePrinterConfig} className="primary">
+                Save Changes
+              </button>
+              <button onClick={() => setEditingPrinter(null)} className="secondary">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {printers.length > 0 ? (
           <div className="printer-grid" style={{ marginTop: '1rem' }}>
             {printers.map((printer) => (
@@ -257,6 +388,20 @@ function PrinterDiscovery({ printers, onChange }) {
                 </div>
                 <div className="printer-actions">
                   <button
+                    onClick={() => setTestPrintDialog(printer)}
+                    className="primary"
+                    style={{ width: '100%', marginBottom: '0.5rem' }}
+                  >
+                    Test Print
+                  </button>
+                  <button
+                    onClick={() => startEditPrinter(printer)}
+                    className="secondary"
+                    style={{ width: '100%', marginBottom: '0.5rem' }}
+                  >
+                    Edit
+                  </button>
+                  <button
                     onClick={() => removePrinter(printer.id)}
                     className="danger"
                     style={{ width: '100%' }}
@@ -271,6 +416,44 @@ function PrinterDiscovery({ printers, onChange }) {
           <p style={{ marginTop: '1rem', opacity: 0.8 }}>
             No printers configured yet. Scan the network or add manually.
           </p>
+        )}
+
+        {testPrintDialog && (
+          <div className="modal-backdrop" onClick={() => !testing && setTestPrintDialog(null)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h3>Test Print - {testPrintDialog.config?.display_name || testPrintDialog.id}</h3>
+              <div className="form-group">
+                <label>Print Format</label>
+                <select
+                  value={testPrintFormat}
+                  onChange={(e) => setTestPrintFormat(e.target.value)}
+                  disabled={testing}
+                >
+                  <option value="zpl">ZPL (Zebra)</option>
+                  <option value="raw">Raw Text</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Print Content</label>
+                <textarea
+                  value={testPrintContent}
+                  onChange={(e) => setTestPrintContent(e.target.value)}
+                  rows="10"
+                  placeholder={testPrintFormat === 'zpl' ? '^XA^FO50,50^A0N,50,50^FDTest Label^FS^XZ' : 'Enter raw text to print...'}
+                  disabled={testing}
+                  style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                <button onClick={() => setTestPrintDialog(null)} disabled={testing}>
+                  Cancel
+                </button>
+                <button onClick={testPrint} className="primary" disabled={testing || !testPrintContent}>
+                  {testing ? 'Sending...' : 'Send Test Print'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
