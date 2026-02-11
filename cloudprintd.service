@@ -1,16 +1,16 @@
 [Unit]
 Description=CloudPrintd Print Server
-Documentation=https://github.com/yourorg/CloudPrintd
+Documentation=https://github.com/v29tnr/CloudPrintd
 After=network.target cups.service
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=CloudPrintd
-Group=CloudPrintd
-WorkingDirectory=/opt/CloudPrintd/packages/current/app
-Environment="PATH=/opt/CloudPrintd/packages/current/venv/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/opt/CloudPrintd/packages/current/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config /opt/CloudPrintd/config/logging.json
+User=cloudprintd
+Group=cloudprintd
+WorkingDirectory=/opt/cloudprintd/app
+Environment="PATH=/opt/cloudprintd/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/cloudprintd/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config /home/cloudprintd/config/logging.json
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=mixed
 KillSignal=SIGTERM
@@ -23,7 +23,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/opt/CloudPrintd/config /opt/CloudPrintd/downloads /home/CloudPrintd/logs /home/CloudPrintd/data
+ReadWritePaths=/home/cloudprintd/config /home/cloudprintd/downloads /home/cloudprintd/logs /home/cloudprintd/data
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true

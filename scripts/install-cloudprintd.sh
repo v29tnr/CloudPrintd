@@ -66,18 +66,39 @@ fi
 
 # Install Node.js
 echo "📦 Installing Node.js..."
-if ! command -v node &> /dev/null; then
-    # Use Node.js 20 LTS (supported until April 2026)
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt install -y nodejs
+# Detect ARM architecture (Pi Zero 2W compatibility)
+ARCH=$(uname -m)
+if [[ "$ARCH" == "armv7l" ]]; then
+    echo "🔧 Detected ARMv7 (Pi Zero 2W) - installing unofficial ARM build"
+    # Use unofficial Node.js builds for ARMv7 compatibility
+    NODE_VERSION="v18.20.8"
+    NODE_DISTRO="linux-armv7l"
+    if ! command -v node &> /dev/null || [[ $(node --version) != "$NODE_VERSION" ]]; then
+        cd /tmp
+        wget https://unofficial-builds.nodejs.org/download/release/${NODE_VERSION}/node-${NODE_VERSION}-${NODE_DISTRO}.tar.gz
+        sudo tar -xzf node-${NODE_VERSION}-${NODE_DISTRO}.tar.gz -C /usr/local --strip-components=1
+        rm node-${NODE_VERSION}-${NODE_DISTRO}.tar.gz
+        echo "✅ Installed Node.js $NODE_VERSION (ARMv7 compatible)"
+    else
+        echo "✅ Node.js already installed: $(node --version)"
+    fi
+elif [[ "$ARCH" == "aarch64" ]]; then
+    echo "🔧 Detected ARM64 - using official repository"
+    sudo apt install -y nodejs npm
 else
-    NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-    if [ "$NODE_VERSION" -lt 18 ]; then
-        echo "⚠️  Node.js version too old ($(node --version)), upgrading to v20 LTS..."
+    if ! command -v node &> /dev/null; then
+        # Use Node.js 20 LTS (supported until April 2026)
         curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
         sudo apt install -y nodejs
     else
-        echo "Node.js already installed: $(node --version)"
+        NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+        if [ "$NODE_VERSION" -lt 18 ]; then
+            echo "⚠️  Node.js version too old ($(node --version)), upgrading to v20 LTS..."
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt install -y nodejs
+        else
+            echo "Node.js already installed: $(node --version)"
+        fi
     fi
 fi
 
@@ -126,8 +147,21 @@ sudo -u cloudprintd TMPDIR=/var/tmp ./venv/bin/pip install -r requirements.txt
 # Build frontend
 echo "⚛️  Building frontend..."
 cd /opt/cloudprintd/webui
-sudo -u cloudprintd npm install
-sudo -u cloudprintd npm run build
+if [ -d "dist" ] && [ "$(ls -A dist)" ]; then
+    echo "✅ Pre-built frontend found, skipping build (recommended for Pi Zero 2W)"
+else
+    echo "📦 Building frontend from source..."
+    if command -v node &> /dev/null; then
+        sudo -u cloudprintd npm install
+        sudo -u cloudprintd npm run build
+    else
+        echo "❌ ERROR: Node.js not found and no pre-built frontend available"
+        echo "💡 TIP: Pre-build the frontend on another machine:"
+        echo "   cd webui && npm install && npm run build"
+        echo "   Then copy the webui/dist/ folder to the Pi"
+        exit 1
+    fi
+fi
 
 # Create directories
 echo "📁 Creating directories..."
