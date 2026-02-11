@@ -8,9 +8,9 @@ Wants=network-online.target
 Type=simple
 User=cloudprintd
 Group=cloudprintd
-WorkingDirectory=/opt/cloudprintd/app
+WorkingDirectory=/opt/cloudprintd
 Environment="PATH=/opt/cloudprintd/venv/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/opt/cloudprintd/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config /home/cloudprintd/config/logging.json
+ExecStart=/opt/cloudprintd/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-config /home/cloudprintd/config/logging.json
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=mixed
 KillSignal=SIGTERM
