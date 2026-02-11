@@ -132,9 +132,9 @@ def update_stats(printer_id: str, success: bool) -> None:
 
 # API Endpoints
 
-@app.get("/", tags=["General"])
+@app.get("/api/v1/", tags=["General"])
 async def root():
-    """Root endpoint."""
+    """API root endpoint."""
     return {
         "service": "CloudPrintd Print Server",
         "version": "1.0.0",
