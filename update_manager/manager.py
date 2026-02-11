@@ -20,23 +20,24 @@ logger = logging.getLogger(__name__)
 class UpdateManager:
     """Manages package updates, installations, and version control."""
     
-    def __init__(self, base_dir: str = "/opt/CloudPrintd"):
+    def __init__(self, base_dir: Optional[str] = None):
         """
         Initialise update manager.
         
         Args:
-            base_dir: Base directory for CloudPrintd installation
+            base_dir: Base directory for CloudPrintd data (defaults to env var or /home/cloudprintd/data)
         """
+        if base_dir is None:
+            base_dir = os.getenv("DATA_DIR", "/home/cloudprintd/data")
+        
         self.base_dir = Path(base_dir)
         self.packages_dir = self.base_dir / "packages"
         self.downloads_dir = self.base_dir / "downloads"
-        self.config_dir = self.base_dir / "config"
         self.current_link = self.packages_dir / "current"
         
         # Ensure directories exist
         self.packages_dir.mkdir(parents=True, exist_ok=True)
         self.downloads_dir.mkdir(parents=True, exist_ok=True)
-        self.config_dir.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"UpdateManager initialised with base_dir: {base_dir}")
     
