@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { systemAPI } from '../api';
 import UpdateManager from './UpdateManager';
 import ServiceControl from './ServiceControl';
 import APIKeyManager from './APIKeyManager';
 import NetworkSetup from './NetworkSetup';
+import PrinterDiscovery from './PrinterDiscovery';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [printers, setPrinters] = useState([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -87,6 +91,20 @@ function Dashboard() {
               }}
             >
               Service Control
+            </button>
+            <button
+              onClick={() => setActiveTab('printers')}
+              style={{
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === 'printers' ? '2px solid #646cff' : 'none',
+                padding: '1rem',
+                cursor: 'pointer',
+                color: activeTab === 'printers' ? '#646cff' : 'inherit',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Printers
             </button>
             <button
               onClick={() => setActiveTab('apikeys')}
@@ -168,10 +186,10 @@ function Dashboard() {
             <div className="card">
               <h2>Quick Actions</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                <button className="primary" onClick={() => window.location.href = '/setup'}>
+                <button className="primary" onClick={() => navigate('/setup')}>
                   Run Setup Wizard
                 </button>
-                <button className="secondary" onClick={() => window.location.href = '/docs'}>
+                <button className="secondary" onClick={() => window.open('/docs', '_blank')}>
                   View Documentation
                 </button>
                 <button className="secondary" onClick={loadDashboardData}>
@@ -212,6 +230,10 @@ function Dashboard() {
 
         {activeTab === 'service' && (
           <ServiceControl />
+        )}
+
+        {activeTab === 'printers' && (
+          <PrinterDiscovery printers={printers} onChange={setPrinters} />
         )}
 
         {activeTab === 'apikeys' && (

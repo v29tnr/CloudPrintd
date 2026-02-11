@@ -414,8 +414,11 @@ def _get_interface_status(interface: str) -> Dict[str, Any]:
     """Get status of network interface"""
     # Check if interface exists and is up
     code, output, _ = run_command(["ip", "link", "show", interface], check=False)
-    if code != 0 or "state UP" not in output:
+    if code != 0:
         return {"connected": False, "ip": "", "mac": ""}
+    
+    # Check if state is UP (interface is enabled)
+    is_up = "state UP" in output or "state UNKNOWN" in output
     
     # Get IP address
     code, output, _ = run_command(["ip", "-4", "addr", "show", interface], check=False)
@@ -429,7 +432,7 @@ def _get_interface_status(interface: str) -> Dict[str, Any]:
     mac = _get_mac_address(interface)
     
     return {
-        "connected": bool(ip),
+        "connected": bool(ip) and is_up,
         "ip": ip,
         "mac": mac
     }
