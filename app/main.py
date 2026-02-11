@@ -3,6 +3,7 @@ CloudPrintd FastAPI Application
 Main entry point for the print server API.
 """
 import logging
+import os
 import secrets
 import time
 from datetime import datetime
@@ -72,7 +73,8 @@ app.add_middleware(
 )
 
 # Initialise managers
-config_manager = ConfigManager()
+config_dir = os.getenv("CONFIG_DIR", "config")
+config_manager = ConfigManager(config_dir=config_dir)
 security_manager = SecurityManager(config_manager)
 update_manager = UpdateManager()
 
